@@ -6,9 +6,9 @@ require 'config.php';
 require 'api_handler.php';
 
 // Konfigurierbare Farben für den aktuellen Wert
-$color_current_default = 'rgba(54, 162, 235, 0.7)'; // Standardfarbe für aktuellen Wert
 $color_higher = 'rgba(0, 128, 0, 0.7)'; // Grün, falls aktueller Wert höher als Durchschnitt
 $color_lower = 'rgba(255, 0, 0, 0.7)'; // Rot, falls aktueller Wert niedriger als Durchschnitt
+$color_average = 'rgba(54, 162, 235, 0.5)'; // Blau für den Durchschnittswert
 
 // Wechselkurs abrufen
 list($exchangeRate, $response, $exchangeData) = fetchExchangeRate(CURRENCY, EXCHANGE_CACHE_FILE, CACHE_TIME, $apiError);
@@ -93,22 +93,20 @@ foreach ($stocks as $symbol => $quantity) {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Durchschnittswert (€)',
+                        label: 'Gesamtwert (Größere Balken)',
                         data: averageValues,
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
-                        barPercentage: 1.0,
-                        categoryPercentage: 0.5
+                        stack: 'Stack 0'
                     },
                     {
-                        label: 'Aktueller Wert (€)',
+                        label: 'Aktueller Wert (Kleinere Balken)',
                         data: currentValues,
                         backgroundColor: barColors,
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
-                        barPercentage: 0.9,
-                        categoryPercentage: 0.5
+                        stack: 'Stack 0'
                     }
                 ]
             },
@@ -118,7 +116,10 @@ foreach ($stocks as $symbol => $quantity) {
                     legend: { position: 'top' }
                 },
                 scales: {
-                    y: { beginAtZero: true }
+                    y: {
+                        stacked: true, // Balken übereinander stapeln
+                        beginAtZero: true
+                    }
                 }
             }
         });
