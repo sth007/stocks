@@ -5,6 +5,11 @@ if (!file_exists('config.php')) {
 require 'config.php';
 require 'api_handler.php';
 
+// Konfigurierbare Farben für den aktuellen Wert
+$color_current_default = 'rgba(54, 162, 235, 0.7)'; // Standardfarbe für aktuellen Wert
+$color_higher = 'rgba(0, 128, 0, 0.7)'; // Grün, falls aktueller Wert höher als Durchschnitt
+$color_lower = 'rgba(255, 0, 0, 0.7)'; // Rot, falls aktueller Wert niedriger als Durchschnitt
+
 // Wechselkurs abrufen
 list($exchangeRate, $response, $exchangeData) = fetchExchangeRate(CURRENCY, EXCHANGE_CACHE_FILE, CACHE_TIME, $apiError);
 
@@ -22,6 +27,20 @@ foreach ($stocks as $symbol => $quantity) {
     $values[$symbol] = ($latestPrice * $quantity) * $exchangeRate;
     $totalValue += $values[$symbol];
 }
+
+// Durchschnittswert pro Aktie berechnen
+$averageValue = $totalValue / count($stocks);
+
+// Berechnung der benötigten Aktienanzahl pro Aktie
+$stockCounts = [];
+$chartColors = [];
+foreach ($stocks as $symbol => $quantity) {
+    $latestPrice = $stockData[$symbol] ?? 0;
+    $stockCounts[$symbol] = $latestPrice > 0 ? round($averageValue / ($latestPrice * $exchangeRate), 2) : 0;
+
+    // Farbe bestimmen: Rot falls niedriger, Grün falls höher
+    $chartColors[$symbol] = ($values[$symbol] < $averageValue) ? $color_lower : $color_higher;
+}
 ?>
 
 <!DOCTYPE html>
@@ -29,52 +48,75 @@ foreach ($stocks as $symbol => $quantity) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aktienportfolio-Wert</title>
+    <title>Aktienportfolio-Analyse</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body>
-    <?php if (LOGLEVEL === 'debug'): ?>
-    <button onclick="document.getElementById('debug').style.display='block'">Fehler anzeigen</button>
-    <?php endif; ?>
-    <?php if (LOGLEVEL === 'debug'): ?>
-    <pre id="debug" style="display:none;">API Response Wechselkurs:
-    <?php var_dump($response); ?>
-    
-    Dekodierte Wechselkurs-Daten:
-    <?php var_dump($exchangeData); ?>
-    
-    API Response Aktienkurse:
-    <?php var_dump($data); ?></pre>
-    <?php endif; ?>
-    <?php if ($apiError): ?>
-        <div style="color: red; font-weight: bold;">Hinweis: <?php echo $apiError; ?></div>
-    <?php endif; ?>
-    <h2>Gesamtwert der Aktien: <?php echo numfmt_format(numfmt_create('de_DE', NumberFormatter::CURRENCY), $totalValue); ?> <?php echo CURRENCY; ?> (Umrechnungskurs: <?php echo number_format($exchangeRate, 4, ',', '.'); ?>)</h2>
-    <canvas id="stockChart" width="600" height="400"></canvas>
-<script>
-var canvas = document.getElementById('stockChart');
-if (canvas) {
-	var ctx = canvas.getContext('2d');
-	var stockChart = new Chart(ctx, {
-	type: 'bar',
-		data: {
-		labels: <?php echo json_encode(array_keys($values)); ?>,
-			datasets: [{
-			label: 'Wert (<?php echo CURRENCY; ?>)',
-				data: <?php echo json_encode(array_values($values)); ?>,
-				backgroundColor: 'blue'
-	}]
-	},
-		options: {
-		responsive: true,
-			scales: {
-			x: { display: true },
-				y: { display: true }
-	}
-	}
-	});
-}
-	</script>
+<body class="container mt-4">
+    <h2 class="text-center">Depot-Analyse</h2>
+    <p class="text-center">Gesamtwert des Depots: <strong><?= number_format($totalValue, 2) ?> €</strong></p>
+    <p class="text-center">Durchschnittswert pro Aktie: <strong><?= number_format($averageValue, 2) ?> €</strong></p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Aktie</th>
+                <th>Preis (€)</th>
+                <th>Benötigte Anzahl</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($stockCounts as $symbol => $count): ?>
+                <tr>
+                    <td><?= $symbol ?></td>
+                    <td><?= number_format($stockData[$symbol] * $exchangeRate, 2) ?></td>
+                    <td><?= $count ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <canvas id="stockChart"></canvas>
+
+    <script>
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        const labels = <?= json_encode(array_keys($values)) ?>;
+        const currentValues = <?= json_encode(array_values($values)) ?>;
+        const averageValues = Array(labels.length).fill(<?= json_encode($averageValue) ?>);
+        const barColors = <?= json_encode(array_values($chartColors)) ?>;
+
+        const stockChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Aktueller Wert (€)',
+                        data: currentValues,
+                        backgroundColor: barColors,
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Durchschnittswert (€)',
+                        data: averageValues,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+
 </body>
 </html>
-
