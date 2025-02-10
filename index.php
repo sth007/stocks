@@ -22,6 +22,8 @@ if (empty($stockData)) {
     $stockData = json_decode(file_get_contents(STOCK_CACHE_FILE), true) ?? [];
 }
 
+$stockDataSorted = [];
+
 foreach ($stocks as $symbol => $quantity) {
     $latestPrice = $stockData[$symbol] ?? 0;
     $values[$symbol] = ($latestPrice * $quantity) * $exchangeRate;
@@ -31,16 +33,25 @@ foreach ($stocks as $symbol => $quantity) {
 // Durchschnittswert pro Aktie berechnen
 $averageValue = $totalValue / count($stocks);
 
-// Berechnung der benötigten Aktienanzahl pro Aktie
-$stockCounts = [];
-$chartColors = [];
 foreach ($stocks as $symbol => $quantity) {
     $latestPrice = $stockData[$symbol] ?? 0;
-    $stockCounts[$symbol] = $latestPrice > 0 ? round($averageValue / ($latestPrice * $exchangeRate), 2) : 0;
+    $neededCount = $latestPrice > 0 ? round($averageValue / ($latestPrice * $exchangeRate), 2) : 0;
+    $difference = $quantity - $neededCount;
 
-    // Farbe bestimmen: Rot falls niedriger, Grün falls höher
-    $chartColors[$symbol] = ($values[$symbol] < $averageValue) ? $color_lower : $color_higher;
+    // Werte speichern für Sortierung
+    $stockDataSorted[] = [
+        'symbol' => $symbol,
+        'price' => number_format($stockData[$symbol] * $exchangeRate, 2),
+        'current_count' => $quantity,
+        'needed_count' => $neededCount,
+        'difference' => $difference
+    ];
 }
+
+// Sortieren nach Differenz absteigend
+usort($stockDataSorted, function ($a, $b) {
+    return $b['difference'] <=> $a['difference'];
+});
 ?>
 
 <!DOCTYPE html>
@@ -51,6 +62,10 @@ foreach ($stocks as $symbol => $quantity) {
     <title>Aktienportfolio-Analyse</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .positive { background-color: #d4edda !important; } /* Hellgrün */
+        .negative { background-color: #f8d7da !important; } /* Hellrot */
+    </style>
 </head>
 <body class="container mt-4">
     <h2 class="text-center">Depot-Analyse</h2>
@@ -64,15 +79,17 @@ foreach ($stocks as $symbol => $quantity) {
                 <th>Preis (€)</th>
                 <th>Aktuelle Anzahl</th>
                 <th>Benötigte Anzahl</th>
+                <th>Differenz</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($stockCounts as $symbol => $count): ?>
-                <tr>
-                    <td><?= $symbol ?></td>
-                    <td><?= number_format($stockData[$symbol] * $exchangeRate, 2) ?></td>
-                    <td><?= $stocks[$symbol] ?></td>
-                    <td><?= $count ?></td>
+            <?php foreach ($stockDataSorted as $stock): ?>
+                <tr class="<?= $stock['difference'] < 0 ? 'negative' : 'positive' ?>">
+                    <td><?= $stock['symbol'] ?></td>
+                    <td><?= $stock['price'] ?></td>
+                    <td><?= $stock['current_count'] ?></td>
+                    <td><?= $stock['needed_count'] ?></td>
+                    <td><?= $stock['difference'] ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -82,28 +99,27 @@ foreach ($stocks as $symbol => $quantity) {
 
     <script>
         const ctx = document.getElementById('stockChart').getContext('2d');
-        const labels = <?= json_encode(array_keys($values)) ?>;
-        const currentValues = <?= json_encode(array_values($values)) ?>;
-        const averageValues = Array(labels.length).fill(<?= json_encode($averageValue) ?>);
-        const barColors = <?= json_encode(array_values($chartColors)) ?>;
-
+        const labels = <?= json_encode(array_column($stockDataSorted, 'symbol')) ?>;
+        const currentValues = <?= json_encode(array_column($stockDataSorted, 'current_count')) ?>;
+        const neededValues = <?= json_encode(array_column($stockDataSorted, 'needed_count')) ?>;
+        
         const stockChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Gesamtwert (Größere Balken)',
-                        data: averageValues,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        label: 'Benötigte Anzahl',
+                        data: neededValues,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)', // Blau für den Durchschnittswert
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
                         stack: 'Stack 0'
                     },
                     {
-                        label: 'Aktueller Wert (Kleinere Balken)',
+                        label: 'Aktuelle Anzahl',
                         data: currentValues,
-                        backgroundColor: barColors,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)', // Rot für aktuelle Werte
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
                         stack: 'Stack 0'
