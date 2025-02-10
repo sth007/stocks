@@ -62,6 +62,7 @@ foreach ($stocks as $symbol => $quantity) {
             <tr>
                 <th>Aktie</th>
                 <th>Preis (€)</th>
+                <th>Aktuelle Anzahl</th>
                 <th>Benötigte Anzahl</th>
             </tr>
         </thead>
@@ -70,6 +71,7 @@ foreach ($stocks as $symbol => $quantity) {
                 <tr>
                     <td><?= $symbol ?></td>
                     <td><?= number_format($stockData[$symbol] * $exchangeRate, 2) ?></td>
+                    <td><?= $stocks[$symbol] ?></td>
                     <td><?= $count ?></td>
                 </tr>
             <?php endforeach; ?>
@@ -96,7 +98,8 @@ foreach ($stocks as $symbol => $quantity) {
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
-                        stack: 'Stack 0'
+                        barPercentage: 1.0,
+                        categoryPercentage: 0.5
                     },
                     {
                         label: 'Aktueller Wert (€)',
@@ -104,7 +107,8 @@ foreach ($stocks as $symbol => $quantity) {
                         backgroundColor: barColors,
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
-                        stack: 'Stack 0'
+                        barPercentage: 0.9,
+                        categoryPercentage: 0.5
                     }
                 ]
             },
@@ -114,10 +118,7 @@ foreach ($stocks as $symbol => $quantity) {
                     legend: { position: 'top' }
                 },
                 scales: {
-                    y: {
-                        stacked: true, // Hier werden die Balken übereinander gestapelt
-                        beginAtZero: true
-                    }
+                    y: { beginAtZero: true }
                 }
             }
         });
