@@ -63,8 +63,15 @@ usort($stockDataSorted, function ($a, $b) {
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body class="container mt-4">
+<body>
     <h2 class="text-center">Depot-Analyse</h2>
+    <button id="refreshData" class="btn btn-primary mb-3">Werte aktualisieren</button>
+    <script>
+        document.getElementById('refreshData').addEventListener('click', function() {
+            location.reload();
+        });
+    </script>
+
     <p class="text-center">Aktueller Umrechnungskurs: <strong><?= number_format($exchangeRate, 4) ?></strong></p>
     <p class="text-center">Gesamtwert des Depots: <strong><?= number_format($totalValue, 2) ?> €</strong></p>
     <p class="text-center">Durchschnittlicher Wert pro Aktie: <strong><?= number_format($averageValue, 2) ?> €</strong></p>
