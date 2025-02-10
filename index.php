@@ -5,14 +5,12 @@ if (!file_exists('config.php')) {
 require 'config.php';
 require 'api_handler.php';
 
-// Konfigurierbare Farben für Balken
-$color_lower = 'rgba(255, 99, 132, 0.7)';  // Hellrot für Werte unter dem Durchschnitt
-$color_higher = 'rgba(99, 255, 132, 0.7)'; // Hellgrün für Werte über dem Durchschnitt
+// Einheitliche Farbe für alle Balken
+$barColor = 'rgba(54, 162, 235, 0.7)'; // Blau
 
 // Wechselkurs abrufen
 list($exchangeRate, $response, $exchangeData) = fetchExchangeRate(CURRENCY, EXCHANGE_CACHE_FILE, CACHE_TIME, $apiError);
 
-$values = [];
 $totalValue = 0;
 
 list($stockData, $data) = fetchStockPrices($stocks, STOCK_CACHE_FILE, CACHE_TIME, $apiError);
@@ -22,35 +20,31 @@ if (empty($stockData)) {
 }
 
 $stockDataSorted = [];
-$barColors = [];
+$values = [];
 
 foreach ($stocks as $symbol => $quantity) {
     $latestPrice = $stockData[$symbol] ?? 0;
-    $currentValue = ($latestPrice * $quantity) * $exchangeRate;
-    $totalValue += $currentValue;
+    $currentValue = $latestPrice * $quantity * $exchangeRate;
     $values[$symbol] = $currentValue;
+    $totalValue += $currentValue;
 }
 
-// Durchschnittswert pro Aktie berechnen
+// Durchschnittlicher Wert pro Aktie berechnen
 $averageValue = $totalValue / count($stocks);
 
 foreach ($stocks as $symbol => $quantity) {
-    $neededValue = $averageValue;
-    $difference = $values[$symbol] - $neededValue;
-
-    // Farbe abhängig vom Vergleich zum Durchschnittswert
-    if ($values[$symbol] > $averageValue) {
-        $barColors[$symbol] = $color_higher;
-    } else {
-        $barColors[$symbol] = $color_lower;
-    }
+    $needed_shares = ($stockData[$symbol] > 0) ? ($averageValue / ($stockData[$symbol] * $exchangeRate)) : 0;
+    $difference_cnt = $quantity - $needed_shares;
+    $difference = $difference_cnt * ($stockData[$symbol] * $exchangeRate);
 
     $stockDataSorted[] = [
         'symbol' => $symbol,
         'price' => number_format($stockData[$symbol] * $exchangeRate, 2),
-        'current_value' => $values[$symbol],
-        'needed_value' => $neededValue,
-        'difference' => $difference
+        'current_shares' => $quantity,
+        'needed_shares' => $needed_shares,
+        'difference_cnt' => $difference_cnt,
+        'difference' => $difference,
+        'current_value' => $values[$symbol]
     ];
 }
 
@@ -72,15 +66,16 @@ usort($stockDataSorted, function ($a, $b) {
 <body class="container mt-4">
     <h2 class="text-center">Depot-Analyse</h2>
     <p class="text-center">Gesamtwert des Depots: <strong><?= number_format($totalValue, 2) ?> €</strong></p>
-    <p class="text-center">Durchschnittswert pro Aktie: <strong><?= number_format($averageValue, 2) ?> €</strong></p>
+    <p class="text-center">Durchschnittlicher Wert pro Aktie: <strong><?= number_format($averageValue, 2) ?> €</strong></p>
 
     <table class="table table-striped">
         <thead>
             <tr>
                 <th>Aktie</th>
                 <th>Preis (€)</th>
-                <th>Aktueller Wert (€)</th>
-                <th>Benötigter Wert (€)</th>
+                <th>Aktuelle Anzahl</th>
+                <th>Benötigte Anzahl</th>
+                <th>Differenz (Anzahl)</th>
                 <th>Differenz (€)</th>
             </tr>
         </thead>
@@ -89,9 +84,10 @@ usort($stockDataSorted, function ($a, $b) {
                 <tr>
                     <td><?= $stock['symbol'] ?></td>
                     <td><?= $stock['price'] ?></td>
-                    <td><?= number_format($stock['current_value'], 2) ?></td>
-                    <td><?= number_format($stock['needed_value'], 2) ?></td>
-                    <td><?= number_format($stock['difference'], 2) ?></td>
+                    <td><?= $stock['current_shares'] ?></td>
+                    <td><?= $stock['needed_shares'] ?></td>
+                    <td><?= $stock['difference_cnt'] ?></td>
+                    <td><?= $stock['difference'] ?></td> 
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -103,7 +99,7 @@ usort($stockDataSorted, function ($a, $b) {
         const labels = <?= json_encode(array_column($stockDataSorted, 'symbol')) ?>;
         const currentValues = <?= json_encode(array_column($stockDataSorted, 'current_value')) ?>;
         const averageValue = <?= json_encode($averageValue) ?>;
-        const barColors = <?= json_encode(array_values($barColors)) ?>;
+        const barColor = <?= json_encode($barColor) ?>;
 
         const stockChart = new Chart(ctx, {
             type: 'bar',
@@ -113,7 +109,7 @@ usort($stockDataSorted, function ($a, $b) {
                     {
                         label: 'Aktueller Wert (€)',
                         data: currentValues,
-                        backgroundColor: barColors,
+                        backgroundColor: barColor,
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1
                     }
@@ -132,7 +128,7 @@ usort($stockDataSorted, function ($a, $b) {
                                 borderColor: 'blue',
                                 borderWidth: 2,
                                 label: {
-                                    content: 'Durchschnittswert',
+                                    content: 'Durchschnitt: ' + averageValue.toFixed(2) + ' €',
                                     enabled: true,
                                     position: 'start'
                                 }
@@ -150,3 +146,4 @@ usort($stockDataSorted, function ($a, $b) {
     </script>
 </body>
 </html>
+
