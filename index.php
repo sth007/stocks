@@ -64,7 +64,7 @@ usort($stockDataSorted, function ($a, $b) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="container mt-4">
-    
+    <h2 class="text-center">Depot-Analyse</h2>
     <p class="text-center">Aktueller Umrechnungskurs: <strong><?= number_format($exchangeRate, 4) ?></strong></p>
     <p class="text-center">Gesamtwert des Depots: <strong><?= number_format($totalValue, 2) ?> €</strong></p>
     <p class="text-center">Durchschnittlicher Wert pro Aktie: <strong><?= number_format($averageValue, 2) ?> €</strong></p>
