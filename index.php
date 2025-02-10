@@ -91,18 +91,20 @@ foreach ($stocks as $symbol => $quantity) {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Aktueller Wert (€)',
-                        data: currentValues,
-                        backgroundColor: barColors,
-                        borderColor: 'rgba(0, 0, 0, 0.1)',
-                        borderWidth: 1
-                    },
-                    {
                         label: 'Durchschnittswert (€)',
                         data: averageValues,
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(0, 0, 0, 0.1)',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Aktueller Wert (€)',
+                        data: currentValues,
+                        backgroundColor: barColors,
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1,
+                        stack: 'Stack 0'
                     }
                 ]
             },
@@ -112,7 +114,10 @@ foreach ($stocks as $symbol => $quantity) {
                     legend: { position: 'top' }
                 },
                 scales: {
-                    y: { beginAtZero: true }
+                    y: {
+                        stacked: true, // Hier werden die Balken übereinander gestapelt
+                        beginAtZero: true
+                    }
                 }
             }
         });
