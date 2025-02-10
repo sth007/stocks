@@ -63,7 +63,7 @@ usort($stockDataSorted, function ($a, $b) {
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body>
+<body class="container mt-4">
     <h2 class="text-center">Depot-Analyse</h2>
     <button id="refreshData" class="btn btn-primary mb-3">Werte aktualisieren</button>
     <script>
