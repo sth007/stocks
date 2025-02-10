@@ -6,7 +6,7 @@ require 'config.php';
 require 'api_handler.php';
 
 // Konfigurierbare Farben für den aktuellen Wert
-$color_current_default = 'rgba(54, 162, 235, 0.7)'; // Standardfarbe für aktuellen Wert
+$color_current_default = 'rgba(54, 162, 235, 0.5)'; // Standardfarbe für aktuellen Wert
 $color_higher = 'rgba(0, 128, 0, 0.7)'; // Grün, falls aktueller Wert höher als Durchschnitt
 $color_lower = 'rgba(255, 0, 0, 0.7)'; // Rot, falls aktueller Wert niedriger als Durchschnitt
 
@@ -96,7 +96,8 @@ foreach ($stocks as $symbol => $quantity) {
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
-                        stack: 'Stack 0'
+                        barPercentage: 1.0, // Volle Breite nutzen
+                        categoryPercentage: 0.5 // Etwas schmaler, um Überlappung zu ermöglichen
                     },
                     {
                         label: 'Aktueller Wert (€)',
@@ -104,7 +105,8 @@ foreach ($stocks as $symbol => $quantity) {
                         backgroundColor: barColors,
                         borderColor: 'rgba(0, 0, 0, 0.1)',
                         borderWidth: 1,
-                        stack: 'Stack 0'
+                        barPercentage: 0.9, // Etwas schmaler, um hintereinander anzuzeigen
+                        categoryPercentage: 0.5
                     }
                 ]
             },
@@ -114,10 +116,7 @@ foreach ($stocks as $symbol => $quantity) {
                     legend: { position: 'top' }
                 },
                 scales: {
-                    y: {
-                        stacked: true, // Hier werden die Balken übereinander gestapelt
-                        beginAtZero: true
-                    }
+                    y: { beginAtZero: true }
                 }
             }
         });
