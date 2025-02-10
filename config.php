@@ -3,7 +3,7 @@
 
 // API-Anbieter (mögliche Werte: 'alphavantage', 'twelvedata', 'exchangerate-api')
 if (!defined('API_PROVIDER_EXCHANGE_RATE')) {
-    define('API_PROVAPI_PROVIDER_EXCHANGE_RATEIDER', 'exchangerate-api');
+    define('API_PROVIDER_EXCHANGE_RATE', 'exchangerate-api');
 }
 
 // API-Anbieter (mögliche Werte: 'alphavantage', 'twelvedata')
