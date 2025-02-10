@@ -9,12 +9,10 @@ function fetchExchangeRate($currency, $cacheFile, $cacheTime, &$apiError) {
 	$exchangeData = null;
 
 	if (!file_exists($cacheFile) || (time() - filemtime($cacheFile)) >= $cacheTime) {
-		if (API_PROVIDER === 'exchangerate-api') {
+		if (API_PROVIDER_EXCHANGE_RATE === 'exchangerate-api') {
 			$url = "https://api.exchangerate-api.com/v4/latest/USD";
-		} elseif (API_PROVIDER === 'twelvedata') {
+		} elseif (API_PROVIDER_EXCHANGE_RATE === 'twelvedata') {
 			$url = "https://api.twelvedata.com/exchange_rate?symbol=USD/EUR&apikey=" . API_KEY;
-		} elseif (API_PROVIDER === 'alphavantage') {
-			$url = "https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=" . $currency . "&apikey=" . API_KEY;
 		} else {
 			$apiError = "Ungültiger API-Anbieter für Wechselkurse.";
 			return [1, $response, $exchangeData];
@@ -60,9 +58,9 @@ function fetchStockPrices($stocks, $cacheFile, $cacheTime, &$apiError) {
 	if (!file_exists($cacheFile) || (time() - filemtime($cacheFile)) >= $cacheTime) {
 		$stockData = [];
 		foreach ($stocks as $symbol => $quantity) {
-			if (API_PROVIDER === 'alphavantage') {
+			if (API_PROVIDER_STOCK_PRICES === 'alphavantage') {
 				$url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=$symbol&apikey=" . API_KEY;
-			} elseif (API_PROVIDER === 'twelvedata') {
+			} elseif (API_PROVIDER_STOCK_PRICES === 'twelvedata') {
 				$url = "https://api.twelvedata.com/time_series?symbol=$symbol&interval=1day&apikey=" . API_KEY;
 			} else {
 				$apiError = "Ungültiger API-Anbieter für Aktienkurse.";

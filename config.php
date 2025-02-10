@@ -2,9 +2,15 @@
 // Konfigurationsdatei für das Aktienportfolio
 
 // API-Anbieter (mögliche Werte: 'alphavantage', 'twelvedata', 'exchangerate-api')
-if (!defined('API_PROVIDER')) {
-    define('API_PROVIDER', 'alphavantage');
+if (!defined('API_PROVIDER_EXCHANGE_RATE')) {
+    define('API_PROVAPI_PROVIDER_EXCHANGE_RATEIDER', 'exchangerate-api');
 }
+
+// API-Anbieter (mögliche Werte: 'alphavantage', 'twelvedata')
+if (!defined('API_PROVIDER_STOCK_PRICES')) {
+    define('API_PROVIDER_STOCK_PRICES', 'alphavantage');
+}
+
 
 // API-Schlüssel für den gewählten Anbieter
 if (!defined('API_KEY')) {
