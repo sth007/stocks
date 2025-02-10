@@ -26,8 +26,9 @@ $stockDataSorted = [];
 
 foreach ($stocks as $symbol => $quantity) {
     $latestPrice = $stockData[$symbol] ?? 0;
-    $values[$symbol] = ($latestPrice * $quantity) * $exchangeRate;
-    $totalValue += $values[$symbol];
+    $currentValue = ($latestPrice * $quantity) * $exchangeRate;
+    $values[$symbol] = $currentValue;
+    $totalValue += $currentValue;
 }
 
 // Durchschnittswert pro Aktie berechnen
@@ -35,15 +36,15 @@ $averageValue = $totalValue / count($stocks);
 
 foreach ($stocks as $symbol => $quantity) {
     $latestPrice = $stockData[$symbol] ?? 0;
-    $neededCount = $latestPrice > 0 ? round($averageValue / ($latestPrice * $exchangeRate), 2) : 0;
-    $difference = $quantity - $neededCount;
+    $neededValue = $latestPrice > 0 ? $averageValue : 0;
+    $difference = $values[$symbol] - $neededValue;
 
     // Werte speichern für Sortierung
     $stockDataSorted[] = [
         'symbol' => $symbol,
         'price' => number_format($stockData[$symbol] * $exchangeRate, 2),
-        'current_count' => $quantity,
-        'needed_count' => $neededCount,
+        'current_value' => $values[$symbol],
+        'needed_value' => $neededValue,
         'difference' => $difference
     ];
 }
@@ -77,9 +78,9 @@ usort($stockDataSorted, function ($a, $b) {
             <tr>
                 <th>Aktie</th>
                 <th>Preis (€)</th>
-                <th>Aktuelle Anzahl</th>
-                <th>Benötigte Anzahl</th>
-                <th>Differenz</th>
+                <th>Aktueller Wert (€)</th>
+                <th>Benötigter Wert (€)</th>
+                <th>Differenz (€)</th>
             </tr>
         </thead>
         <tbody>
@@ -87,9 +88,9 @@ usort($stockDataSorted, function ($a, $b) {
                 <tr class="<?= $stock['difference'] < 0 ? 'negative' : 'positive' ?>">
                     <td><?= $stock['symbol'] ?></td>
                     <td><?= $stock['price'] ?></td>
-                    <td><?= $stock['current_count'] ?></td>
-                    <td><?= $stock['needed_count'] ?></td>
-                    <td><?= $stock['difference'] ?></td>
+                    <td><?= number_format($stock['current_value'], 2) ?></td>
+                    <td><?= number_format($stock['needed_value'], 2) ?></td>
+                    <td><?= number_format($stock['difference'], 2) ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -100,8 +101,8 @@ usort($stockDataSorted, function ($a, $b) {
     <script>
         const ctx = document.getElementById('stockChart').getContext('2d');
         const labels = <?= json_encode(array_column($stockDataSorted, 'symbol')) ?>;
-        const currentValues = <?= json_encode(array_column($stockDataSorted, 'current_count')) ?>;
-        const neededValues = <?= json_encode(array_column($stockDataSorted, 'needed_count')) ?>;
+        const currentValues = <?= json_encode(array_column($stockDataSorted, 'current_value')) ?>;
+        const neededValues = <?= json_encode(array_column($stockDataSorted, 'needed_value')) ?>;
         
         const stockChart = new Chart(ctx, {
             type: 'bar',
@@ -109,7 +110,7 @@ usort($stockDataSorted, function ($a, $b) {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Benötigte Anzahl',
+                        label: 'Benötigter Wert (€)',
                         data: neededValues,
                         backgroundColor: 'rgba(54, 162, 235, 0.5)', // Blau für den Durchschnittswert
                         borderColor: 'rgba(0, 0, 0, 0.1)',
@@ -117,7 +118,7 @@ usort($stockDataSorted, function ($a, $b) {
                         stack: 'Stack 0'
                     },
                     {
-                        label: 'Aktuelle Anzahl',
+                        label: 'Aktueller Wert (€)',
                         data: currentValues,
                         backgroundColor: 'rgba(255, 99, 132, 0.7)', // Rot für aktuelle Werte
                         borderColor: 'rgba(0, 0, 0, 0.1)',
